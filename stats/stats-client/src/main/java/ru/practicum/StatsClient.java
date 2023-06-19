@@ -1,5 +1,6 @@
 package ru.practicum;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -12,7 +13,10 @@ import java.util.List;
 @Service
 public class StatsClient {
 
-    private final WebClient webClient = WebClient.create("http://stats-server:9090");
+    @Value("${STATS_SERVER_URL}")
+    String serverUrl;
+
+    private final WebClient webClient = WebClient.create(serverUrl);
 
     public ResponseEntity<EndpointHitDto> saveStats(@Valid EndpointHitDto endpointHitDto) {
         return webClient.post()
