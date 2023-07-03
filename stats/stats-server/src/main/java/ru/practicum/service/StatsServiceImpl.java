@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.EndpointHitDto;
 import ru.practicum.ViewStatsDto;
+import ru.practicum.exception.ValidationException;
 import ru.practicum.model.Stats;
 import ru.practicum.model.ViewStats;
 import ru.practicum.repository.StatsRepository;
@@ -26,6 +27,9 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public List<ViewStatsDto> get(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         List<ViewStats> stats;
+        if (start.isAfter(end)) {
+            throw new ValidationException("The beginning of the range cannot be later than the end of the range.");
+        }
         if (unique) {
             if (uris == null) {
                 stats = statsRepository.getStatsUniqueWithOutUris(start, end);

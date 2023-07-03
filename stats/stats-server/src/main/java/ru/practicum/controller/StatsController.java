@@ -23,6 +23,7 @@ public class StatsController {
     @PostMapping("/hit")
     @ResponseStatus(code = HttpStatus.CREATED)
     public EndpointHitDto save(@RequestBody @Valid EndpointHitDto endpointHitDto) {
+        log.info("Stats server save: {}", endpointHitDto);
         return statsService.save(endpointHitDto);
     }
 
@@ -31,6 +32,7 @@ public class StatsController {
                                   @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
                                   @RequestParam(required = false) List<String> uris,
                                   @RequestParam(defaultValue = "false") boolean unique) {
+        log.info("Stats server get: start {}, end {}, unique {}, uris is null {}", start, end, unique, uris == null);
         return statsService.get(start, end, uris, unique);
     }
 
