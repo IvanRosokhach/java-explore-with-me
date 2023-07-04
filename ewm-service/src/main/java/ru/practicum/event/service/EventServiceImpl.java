@@ -95,7 +95,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventDto> getEvent(String text, List<Long> categories, Boolean paid, String rangeStart, String rangeEnd,
-                                   Boolean onlyAvailable, EventSort sort, int from, int size, HttpServletRequest request) {
+                                   boolean onlyAvailable, EventSort sort, int from, int size, HttpServletRequest request) {
         PageRequest pageRequest = PageRequest.of(from / size, size);
         statisticService.saveStats(request);
         if (text == null && categories == null && paid == null && rangeStart == null && rangeEnd == null) {
@@ -108,18 +108,18 @@ public class EventServiceImpl implements EventService {
                     .filter(event -> (event.getParticipantLimit() - event.getConfirmedRequests()) > 0)
                     .collect(Collectors.toList());
         }
-        List<EventDto> eventDtos = new ArrayList<>();
+        List<EventDto> eventsDto = new ArrayList<>();
         for (Event event : events) {
             EventDto eventDto = EventMapper.toEventDto(event);
             eventDto.setViews(statisticService.getViews(event));
-            eventDtos.add(eventDto);
+            eventsDto.add(eventDto);
         }
         if (sort != null && sort.equals(EventSort.VIEWS)) {
-            eventDtos.stream().sorted(Comparator.comparing(EventDto::getViews)).collect(Collectors.toList());
+            eventsDto.stream().sorted(Comparator.comparing(EventDto::getViews)).collect(Collectors.toList());
         } else if (sort != null && sort.equals(EventSort.EVENT_DATE)) {
-            eventDtos.stream().sorted(Comparator.comparing(EventDto::getEventDate)).collect(Collectors.toList());
+            eventsDto.stream().sorted(Comparator.comparing(EventDto::getEventDate)).collect(Collectors.toList());
         }
-        return eventDtos;
+        return eventsDto;
     }
 
     private BooleanExpression makeExpressionForGet(String text, List<Long> categories, Boolean paid,
@@ -169,13 +169,13 @@ public class EventServiceImpl implements EventService {
         } else {
             events = eventRepository.findAll(pageRequest).stream().collect(Collectors.toList());
         }
-        List<EventDto> eventDtos = new ArrayList<>();
+        List<EventDto> eventsDto = new ArrayList<>();
         for (Event event : events) {
             EventDto eventDto = EventMapper.toEventDto(event);
             eventDto.setViews(statisticService.getViews(event));
-            eventDtos.add(eventDto);
+            eventsDto.add(eventDto);
         }
-        return eventDtos;
+        return eventsDto;
     }
 
     private List<BooleanExpression> makeExpressionForSearch(List<Long> users, List<EventState> states,

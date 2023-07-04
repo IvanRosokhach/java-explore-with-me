@@ -19,7 +19,8 @@ public class Constant {
     public static final String ALREADY_EXIST_CATEGORY = "Category with the name %S already exists";
 
     public static final String USER_NOT_INITIATOR = "The user with the id=%d is not the initiator of the event with the id =%d";
-    public static final String EVENT_DATE_ERROR = "Field: eventDate. Error: должно содержать дату не раньше 2 часов от даты создания события. Value: %S";
+    public static final String EVENT_DATE_ERROR = "Field: eventDate. Error: must contain a date no earlier than 2 hours " +
+            "from the date the event was created. Value: %S";
 
     public static final String SERVICE_NAME = "ewm-main-service";
 

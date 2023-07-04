@@ -30,7 +30,7 @@ public interface EventService {
                                                          EventRequestStatusUpdateRequestDto requestsByEvent);
 
     List<EventDto> getEvent(String text, List<Long> categories, Boolean paid, String rangeStart, String rangeEnd,
-                            Boolean onlyAvailable, EventSort sort, int from, int size, HttpServletRequest request);
+                            boolean onlyAvailable, EventSort sort, int from, int size, HttpServletRequest request);
 
     EventDto getEventById(long eventId, HttpServletRequest request);
 
