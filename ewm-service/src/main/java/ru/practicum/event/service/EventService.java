@@ -2,6 +2,7 @@ package ru.practicum.event.service;
 
 
 import ru.practicum.event.dto.*;
+import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventSort;
 import ru.practicum.event.model.EventState;
 import ru.practicum.request.dto.ParticipationRequestDto;
@@ -33,5 +34,7 @@ public interface EventService {
                             boolean onlyAvailable, EventSort sort, int from, int size, HttpServletRequest request);
 
     EventDto getEventById(long eventId, HttpServletRequest request);
+
+    Event findById(long eventId);
 
 }

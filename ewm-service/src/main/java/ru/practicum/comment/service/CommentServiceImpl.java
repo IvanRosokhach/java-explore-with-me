@@ -8,33 +8,32 @@ import ru.practicum.comment.dao.CommentRepository;
 import ru.practicum.comment.dto.CommentDto;
 import ru.practicum.comment.dto.NewCommentDto;
 import ru.practicum.comment.model.Comment;
-import ru.practicum.event.dao.EventRepository;
 import ru.practicum.event.model.Event;
+import ru.practicum.event.service.EventService;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.exception.ValidationException;
-import ru.practicum.user.dao.UserRepository;
 import ru.practicum.user.model.User;
+import ru.practicum.user.service.UserService;
 
 import java.util.List;
 
-import static ru.practicum.Constant.*;
+import static ru.practicum.Constant.NOT_FOUND_COMMENT;
+import static ru.practicum.Constant.USER_NOT_CREATOR;
 
 @Service
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    private final EventRepository eventRepository;
+    private final EventService eventService;
 
     private final CommentRepository commentRepository;
 
     @Override
     public CommentDto saveComment(long userId, long eventId, NewCommentDto commentDto) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_USER, userId)));
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_EVENT, eventId)));
+        User user = userService.findById(userId);
+        Event event = eventService.findById(eventId);
         Comment comment = commentRepository.save(CommentMapper.createComment(user, event, commentDto));
         return CommentMapper.toCommentDto(comment);
     }
@@ -66,8 +65,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public void deleteComment(long userId, long comId) {
-        userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_USER, userId)));
+        userService.findById(userId);
         Comment comment = commentRepository.findById(comId)
                 .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_COMMENT, comId)));
         if (comment.getCreator().getId() != userId) {
