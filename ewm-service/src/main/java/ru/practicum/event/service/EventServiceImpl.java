@@ -3,8 +3,12 @@ package ru.practicum.event.service;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.category.dao.CategoryRepository;
+import ru.practicum.comment.dao.CommentRepository;
+import ru.practicum.comment.model.Comment;
+import ru.practicum.comment.service.CommentMapper;
 import ru.practicum.event.dao.EventRepository;
 import ru.practicum.event.dao.LocationRepository;
 import ru.practicum.event.dto.*;
@@ -42,6 +46,8 @@ public class EventServiceImpl implements EventService {
 
     private final LocationRepository locationRepository;
 
+    private final CommentRepository commentRepository;
+
     private final StatisticService statisticService;
 
     @Override
@@ -69,6 +75,8 @@ public class EventServiceImpl implements EventService {
         }
         EventDto eventDto = EventMapper.toEventDto(event);
         eventDto.setViews(statisticService.getViews(event));
+        List<Comment> commentsByEventId = commentRepository.findAllByEventId(eventId, Pageable.unpaged());
+        eventDto.setComments(CommentMapper.listToCommentDto(commentsByEventId));
         return eventDto;
     }
 
@@ -77,6 +85,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_EVENT, eventId)));
         checkInitiatorEvent(event, userId);
+
         return EventMapper.toEventDto(event);
     }
 
