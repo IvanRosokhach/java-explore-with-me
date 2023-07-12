@@ -3,8 +3,12 @@ package ru.practicum.event.service;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.category.dao.CategoryRepository;
+import ru.practicum.comment.dao.CommentRepository;
+import ru.practicum.comment.model.Comment;
+import ru.practicum.comment.service.CommentMapper;
 import ru.practicum.event.dao.EventRepository;
 import ru.practicum.event.dao.LocationRepository;
 import ru.practicum.event.dto.*;
@@ -16,7 +20,7 @@ import ru.practicum.request.dto.ParticipationRequestDto;
 import ru.practicum.request.model.ParticipationRequest;
 import ru.practicum.request.model.RequestStatus;
 import ru.practicum.request.service.RequestMapper;
-import ru.practicum.user.dao.UserRepository;
+import ru.practicum.user.service.UserService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.UnexpectedTypeException;
@@ -34,13 +38,15 @@ public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
 
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     private final RequestRepository requestRepository;
 
     private final CategoryRepository categoryRepository;
 
     private final LocationRepository locationRepository;
+
+    private final CommentRepository commentRepository;
 
     private final StatisticService statisticService;
 
@@ -53,8 +59,7 @@ public class EventServiceImpl implements EventService {
         Event event = EventMapper.fromNewEventDtoToEvent(newEventDto);
         event.setCategory(categoryRepository.findById(newEventDto.getCategory())
                 .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_CATEGORY, newEventDto.getCategory()))));
-        event.setInitiator(userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_USER, userId))));
+        event.setInitiator(userService.findById(userId));
         locationRepository.save(newEventDto.getLocation());
         return EventMapper.toEventDto(eventRepository.save(event));
     }
@@ -62,13 +67,14 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventDto getEventById(long eventId, HttpServletRequest request) {
         statisticService.saveStats(request);
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_EVENT, eventId)));
+        Event event = findById(eventId);
         if (!event.getState().equals(EventState.PUBLISHED)) {
             throw new NotFoundException("Event was not found or not published");
         }
         EventDto eventDto = EventMapper.toEventDto(event);
         eventDto.setViews(statisticService.getViews(event));
+        List<Comment> commentsByEventId = commentRepository.findAllByEventId(eventId, Pageable.unpaged());
+        eventDto.setComments(CommentMapper.listToCommentDto(commentsByEventId));
         return eventDto;
     }
 
@@ -77,6 +83,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_EVENT, eventId)));
         checkInitiatorEvent(event, userId);
+
         return EventMapper.toEventDto(event);
     }
 
@@ -210,8 +217,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventDto updateAdminByEvent(long eventId, UpdateEventAdminRequestDto eventDto) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_EVENT, eventId)));
+        Event event = findById(eventId);
         LocalDateTime eventDate = event.getEventDate();
         if (eventDto.getEventDate() != null) {
             eventDate = LocalDateTime.parse(eventDto.getEventDate(), formatter);
@@ -246,11 +252,9 @@ public class EventServiceImpl implements EventService {
         return eventDtoAfterSave;
     }
 
-
     @Override
     public EventDto updateEvent(long userId, long eventId, UpdateEventUserRequestDto updateEvent) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_EVENT, eventId)));
+        Event event = findById(eventId);
         if (updateEvent == null) {
             return EventMapper.toEventDto(event);
         }
@@ -288,8 +292,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<ParticipationRequestDto> getRequestByEvent(long userId, long eventId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_EVENT, eventId)));
+        Event event = findById(eventId);
         checkInitiatorEvent(event, userId);
         List<ParticipationRequest> allRequestById = requestRepository.findAllByEventId(eventId);
         return RequestMapper.listToParticipationRequestDto(allRequestById);
@@ -298,8 +301,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventRequestStatusUpdateResultDto updateEventRequest(long userId, long eventId,
                                                                 EventRequestStatusUpdateRequestDto requestsByEvent) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_EVENT, eventId)));
+        Event event = findById(eventId);
         if (event.getConfirmedRequests() == event.getParticipantLimit()) {
             throw new ValidationException("The limit has been reached for the event.");
         }
@@ -338,7 +340,12 @@ public class EventServiceImpl implements EventService {
         }
         resultDto.setRejectedRequests(RequestMapper.listToParticipationRequestDto(rejectedRequests));
         return resultDto;
+    }
 
+    @Override
+    public Event findById(long eventId) {
+        return eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND_EVENT, eventId)));
     }
 
     private void checkForUpdate(EventRequestStatusUpdateRequestDto requestsByEvent,

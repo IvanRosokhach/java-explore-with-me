@@ -3,11 +3,13 @@ package ru.practicum.event.dto;
 import lombok.Builder;
 import lombok.Data;
 import ru.practicum.category.model.Category;
-import ru.practicum.event.model.Location;
+import ru.practicum.comment.dto.CommentDto;
 import ru.practicum.event.model.EventState;
+import ru.practicum.event.model.Location;
 import ru.practicum.user.dto.UserShortDto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -44,5 +46,7 @@ public class EventDto {
     private String title;
 
     private Long views;
+
+    private List<CommentDto> comments;
 
 }
